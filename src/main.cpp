@@ -19,10 +19,10 @@ const int dq_pins[DATA_BUS_WIDTH] = { 22,23,24,25,26,27,28,29 };
 
 // Configuração da EEPROM
 // TAMANHO DA PÁGINA da EEPROM
-const int PAGE_SIZE = 128;
+int PAGE_SIZE = 128;
 
 // ULTIMO ENDEREÇO DA EEPROM
-const int END_ADDRESS = 0x20000;
+unsigned long END_ADDRESS = 0x20000;
 
 // Drive the address bus with a specified value
 void set_address(unsigned long addr) {  
@@ -142,7 +142,7 @@ void identify_device(void) {
   Serial.print("DEVID:");
   Serial.print(family, HEX);
   Serial.print(" ");
-  Serial.print(device, HEX);
+  Serial.println(device, HEX);
 }
 
 
@@ -221,10 +221,26 @@ void dump_device(int mode) {
     } else if(mode == DUMP_RAW) {
       Serial.write(device_byte);
     }
-  }
+  }  
 
   Serial.println();
   digitalWrite(LED, LOW);  
+}
+
+void set_device_settings(String args) {
+  PAGE_SIZE = args.substring(0, args.indexOf(':')).toInt();
+  long pages = args.substring(args.indexOf(':') + 1).toInt();
+  
+  Serial.print("CFG:");
+  Serial.print(PAGE_SIZE);
+  Serial.print(':');
+  Serial.print(pages);
+  
+  long maxMemory = (((long)PAGE_SIZE) * pages); // Precisa do Casting para LONG em!
+  END_ADDRESS = (unsigned long)maxMemory;
+
+  Serial.print(':');
+  Serial.println(maxMemory);
 }
 
 void setup() {
@@ -263,6 +279,9 @@ void loop() {
       }
       else if(cmd.equals("PROGRAM")) { // PROGRAMA A EEPROM
         program_device();
+      }
+      else if(cmd.startsWith("SET")) {
+        set_device_settings(cmd.substring(4));
       }
   }
 
